@@ -1,6 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const authMiddleware = require('../middleware/authMiddleware'); // Le middleware pour vérifier le JWT
+
 const User = require('../models/User');
 const Product = require('../models/Product');
 
@@ -67,6 +69,20 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 });
+/// connected 
+router.get('/user', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select('-password'); // Exclure le mot de passe des données renvoyées
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching authenticated user:', error.message);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
 
 //// liste user 
 router.get('/users', async (req, res) => {
@@ -115,42 +131,52 @@ router.put('/users/:id', async (req, res) => {
     }
   });
     
-  
-  // Route pour créer un produit
+  // ajouter prosuits
   router.post('/products', async (req, res) => {
-    const { name, description, price, quantity, category } = req.body;
-  
+    const { name, description, price, quantity} = req.body;
+
+    console.log('Données reçues :', req.body);
+
     try {
-      const newProduct = new Product({ name, description, price, quantity, category });
-      const savedProduct = await newProduct.save();
-      res.status(201).json(savedProduct);
+        const newProduct = new Product({ name, description, price, quantity});
+        console.log('Nouveau produit créé :', newProduct);
+
+        const savedProduct = await newProduct.save();
+        console.log('Produit sauvegardé :', savedProduct);
+
+        res.status(201).json(savedProduct);
     } catch (error) {
-      res.status(400).json({ message: 'Erreur lors de la création du produit', error });
+        console.error('Erreur lors de la sauvegarde du produit :', error);
+        res.status(400).json({ message: 'Erreur lors de la création du produit', error });
     }
-  });
+});
+
+
 
 
 // Récupérer tous les produits
-router.get('/products', async (req, res) => {
+router.get('/products', authMiddleware, async (req, res) => {
   try {
-    const products = await Product.find(); // Récupérer tous les produits
-    res.status(200).json(products);
+    const products = await Product.find(); // Assurez-vous que le modèle `Product` est correct
+    res.json(products);
   } catch (error) {
-    res.status(500).json({ message: 'Erreur lors de la récupération des produits', error });
+    console.error('Error fetching products:', error.message);
+    res.status(500).json({ msg: 'Server error' });
   }
 });
+
 
   
 
 // Modifier un produit par son ID
 router.put('/products/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, description, price, quantity, category } = req.body;
+  const { name, description, price, quantity} = req.body;
 
   try {
     const updatedProduct = await Product.findByIdAndUpdate(
       id,
-      { name, description, price, quantity, category },
+      { name, description, price, quantity},
       { new: true, runValidators: true } // Retourner le produit mis à jour
     );
     if (!updatedProduct) {

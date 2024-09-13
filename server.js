@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth');
+const bodyParser = require('body-parser');
 
 dotenv.config();
 
@@ -9,6 +10,7 @@ const app = express();
 app.use(express.json());
 const cors = require('cors');
 app.use(cors());
+app.use(bodyParser.json());
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB Connected'))
