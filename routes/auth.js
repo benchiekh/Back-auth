@@ -203,7 +203,24 @@ router.delete('/products/:id', async (req, res) => {
     res.status(500).json({ message: 'Erreur lors de la suppression du produit', error });
   }
 });
+router.put('/user', authMiddleware, async (req, res) => {
+  console.log('PUT /user route reached'); 
+  const { firstName, lastName, email, role } = req.body;
+  try {
 
-  
+      const user = await User.findByIdAndUpdate(
+          req.user.userId,
+          { firstName, lastName, email, role },
+          { new: true, runValidators: true }
+      );
+      if (!user) {
+          return res.status(404).json({ message: 'Utilisateur non trouvé' });
+      }
+      res.status(200).json({ message: 'Utilisateur mis à jour avec succès', user });
+  } catch (error) {
+      res.status(500).json({ message: 'Erreur lors de la mise à jour de l\'utilisateur', error });
+  }
+});
+
   module.exports = router;
   
