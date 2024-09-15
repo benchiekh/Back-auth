@@ -222,5 +222,32 @@ router.put('/user', authMiddleware, async (req, res) => {
   }
 });
 
+
+// Route pour récupérer les statistiques des produits
+router.get('/products/stats', async (req, res) => {
+  try {
+    // Compte total des produits dans la base de données
+    const totalProducts = await Product.countDocuments();
+
+    // Trouve le produit le plus cher en triant par prix décroissant
+    const mostExpensiveProduct = await Product.findOne().sort('-price').exec();
+
+    // Renvoie les statistiques sous forme de JSON
+    res.json({
+      totalProducts,
+      mostExpensiveProduct: {
+        name: mostExpensiveProduct.name,
+        price: mostExpensiveProduct.price
+      }
+    });
+  } catch (error) {
+    // En cas d'erreur, renvoie une réponse d'erreur
+    console.error('Erreur lors de la récupération des statistiques des produits', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+
+
   module.exports = router;
   
